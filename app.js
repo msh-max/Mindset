@@ -12,7 +12,17 @@ const els = {
   results: $("#results"),
 };
 
-// Restore saved settings
+const PALETTE = {
+  text: "#16263f",
+  muted: "#5b6b85",
+  grid: "#dbe5f2",
+  sky: "#0ea5e9",
+  skyDeep: "#0369a1",
+  skyFill: "rgba(14, 165, 233, 0.22)",
+  dim: "#94a3b8",
+  dimFill: "rgba(148, 163, 184, 0.28)",
+};
+
 (function restore() {
   const k = localStorage.getItem("mindset.apiKey");
   if (k) els.apiKey.value = k;
@@ -57,14 +67,18 @@ async function run() {
 
   els.analyze.disabled = true;
   els.results.innerHTML = "";
-  setStatus("Asking the model to look honestly at each fear…", false);
+  setStatus("Reading the cost of each fear…", false);
 
   try {
     const analyses = await Promise.all(
-      selectedFears.map((fear) => analyzeFear({ apiKey, model, goals, fear }))
+      selectedFears.map((fear, i) =>
+        analyzeFear({ apiKey, model, goals, fear, chartStyle: secondaryChartFor(i) })
+      )
     );
     clearStatus();
-    analyses.forEach((data, i) => renderFear(selectedFears[i], data));
+    analyses.forEach((data, i) =>
+      renderFear(selectedFears[i], data, secondaryChartFor(i))
+    );
     els.results.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (err) {
     console.error(err);
@@ -74,41 +88,45 @@ async function run() {
   }
 }
 
-async function analyzeFear({ apiKey, model, goals, fear }) {
-  const system = `You are a direct, no-fluff coach who helps people see the real long-term cost of letting their fears run their decisions. You are honest, specific, and motivational without being preachy. You always respond with valid JSON only — no prose outside the JSON.`;
+function secondaryChartFor(i) {
+  return ["bar", "radar", "polar", "doughnut"][i % 4];
+}
+
+async function analyzeFear({ apiKey, model, goals, fear, chartStyle }) {
+  const system = `You are a direct, no-fluff coach. You write short, sharp lines that land emotionally. You never pad. You always return valid JSON only.`;
 
   const user = `My weekly goals:
 ${goals}
 
 Fear to analyze: "${fear}"
 
-Return a JSON object with EXACTLY this shape and keys:
+Return JSON with EXACTLY this shape:
 
 {
-  "personal_impact": [
-    "5 specific ways this fear could personally stop ME from achieving the goals listed above. Reference my goals concretely. Each bullet 1-2 sentences, second person ('you')."
+  "if_you_dont": [
+    "3 short bullets. Max 14 words each. Concrete consequence of letting this fear win, tied to my goals. Second person ('you'). No fluff."
   ],
-  "others_impact": [
-    "5 specific ways this same fear stops OTHER people from reaching similar goals. Real patterns, examples from real life. Each bullet 1-2 sentences."
+  "if_you_do": [
+    "3 short bullets. Max 14 words each. Concrete win from facing this fear, tied to my goals. Second person. No fluff."
   ],
   "trajectory": {
-    "labels": ["Now", "3 months", "6 months", "1 year", "3 years", "5 years", "10 years"],
-    "with_fear": [70, 60, 50, 40, 25, 15, 8],
-    "without_fear": [70, 75, 82, 88, 93, 96, 98],
-    "y_label": "Overall life satisfaction & progress (0-100)"
+    "labels": ["Now", "6mo", "1yr", "3yr", "5yr", "10yr"],
+    "with_fear": [70, 62, 54, 40, 28, 16],
+    "without_fear": [70, 78, 84, 91, 95, 98]
   },
-  "impact_radar": {
-    "categories": ["Career", "Relationships", "Confidence", "Health", "Finances", "Freedom"],
-    "with_fear": [25, 30, 20, 35, 25, 20],
-    "without_fear": [85, 80, 90, 80, 85, 90]
+  "domains": {
+    "categories": ["Pick 5 life domains MOST relevant to THIS fear and these goals — be specific, e.g. 'Network', 'Income ceiling', 'Self-trust', not generic 'Career'."],
+    "with_fear": [5 numbers 0-100, how much that domain suffers],
+    "without_fear": [5 numbers 0-100, how strong that domain becomes]
   },
-  "wakeup_call": "One short, sharp paragraph (3-4 sentences) telling me what my life will actually look like in 5-10 years if I keep letting this specific fear win. Be vivid and specific, not generic. Reference the goals above."
+  "wakeup_call": "ONE sentence. Max 25 words. Vivid, concrete, references my goals. Punch to the chest, not a lecture."
 }
 
 Rules:
-- The trajectory numbers MUST reflect what THIS specific fear does — pick numbers that make the divergence emotionally clear but believable.
-- Arrays must have the exact lengths shown.
-- No markdown, no comments, no extra keys. JSON only.`;
+- Bullets MUST be short. If a bullet is longer than 14 words, rewrite it.
+- Domain categories MUST be tailored to this specific fear, not generic.
+- Numbers should make the gap clear but believable.
+- JSON only. No markdown, no extra keys.`;
 
   const body = {
     model,
@@ -145,33 +163,41 @@ Rules:
   }
 }
 
-function renderFear(fear, data) {
+function renderFear(fear, data, chartStyle) {
   const id = "fear-" + Math.random().toString(36).slice(2, 8);
   const wrap = document.createElement("section");
   wrap.className = "fear-result";
+
+  const secondaryTitle = {
+    bar: "Where life shrinks vs. opens up",
+    radar: "Where this fear hits hardest",
+    polar: "What expands when you act anyway",
+    doughnut: "Share of your life this fear is dimming",
+  }[chartStyle];
+
   wrap.innerHTML = `
     <h3>${escapeHtml(fear)}</h3>
-    <p class="subtitle">What this fear is quietly doing to your goals — and where it leads.</p>
+    <p class="subtitle">Two paths. Same week. Pick one.</p>
 
-    <div class="impact-grid">
-      <div class="impact-block">
-        <h4>How it stops YOU</h4>
-        <ul>${(data.personal_impact || []).map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>
+    <div class="paths">
+      <div class="path dont">
+        <h4>If you don't face it</h4>
+        <ul>${(data.if_you_dont || []).map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>
       </div>
-      <div class="impact-block">
-        <h4>How it stops OTHERS</h4>
-        <ul>${(data.others_impact || []).map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>
+      <div class="path do">
+        <h4>If you do</h4>
+        <ul>${(data.if_you_do || []).map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>
       </div>
     </div>
 
     <div class="chart-grid">
       <div class="chart-wrap">
-        <h4>Your trajectory — fear in control vs. you in control</h4>
+        <h4>Where you end up — 10 years out</h4>
         <canvas id="${id}-line"></canvas>
       </div>
       <div class="chart-wrap">
-        <h4>Where life suffers most</h4>
-        <canvas id="${id}-radar"></canvas>
+        <h4>${escapeHtml(secondaryTitle)}</h4>
+        <canvas id="${id}-second"></canvas>
       </div>
     </div>
 
@@ -180,7 +206,7 @@ function renderFear(fear, data) {
   els.results.appendChild(wrap);
 
   drawLine(`${id}-line`, data.trajectory);
-  drawRadar(`${id}-radar`, data.impact_radar);
+  drawSecondary(`${id}-second`, chartStyle, data.domains);
 }
 
 function drawLine(canvasId, t) {
@@ -192,54 +218,101 @@ function drawLine(canvasId, t) {
       labels: t.labels,
       datasets: [
         {
-          label: "If fear keeps winning",
+          label: "If fear wins",
           data: t.with_fear,
-          borderColor: "#ef4444",
-          backgroundColor: "rgba(239,68,68,0.15)",
+          borderColor: PALETTE.dim,
+          backgroundColor: PALETTE.dimFill,
+          borderDash: [6, 4],
           tension: 0.35,
           fill: true,
-          pointRadius: 4,
+          pointRadius: 3,
         },
         {
           label: "If you act anyway",
           data: t.without_fear,
-          borderColor: "#4ade80",
-          backgroundColor: "rgba(74,222,128,0.12)",
+          borderColor: PALETTE.sky,
+          backgroundColor: PALETTE.skyFill,
           tension: 0.35,
           fill: true,
-          pointRadius: 4,
+          pointRadius: 3,
         },
       ],
     },
-    options: chartOpts({
-      yTitle: t.y_label || "Progress",
-      yMin: 0,
-      yMax: 100,
-    }),
+    options: lineOpts(),
   });
 }
 
-function drawRadar(canvasId, r) {
-  if (!r) return;
+function drawSecondary(canvasId, style, d) {
+  if (!d) return;
   const ctx = document.getElementById(canvasId).getContext("2d");
+  if (style === "bar") return drawBar(ctx, d);
+  if (style === "radar") return drawRadar(ctx, d);
+  if (style === "polar") return drawPolar(ctx, d);
+  if (style === "doughnut") return drawDoughnut(ctx, d);
+}
+
+function drawBar(ctx, d) {
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: d.categories,
+      datasets: [
+        {
+          label: "Fear wins",
+          data: d.with_fear,
+          backgroundColor: PALETTE.dim,
+          borderRadius: 4,
+        },
+        {
+          label: "You act",
+          data: d.without_fear,
+          backgroundColor: PALETTE.sky,
+          borderRadius: 4,
+        },
+      ],
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: PALETTE.text, font: { size: 11 } } },
+      },
+      scales: {
+        x: {
+          min: 0,
+          max: 100,
+          ticks: { color: PALETTE.muted },
+          grid: { color: PALETTE.grid },
+        },
+        y: {
+          ticks: { color: PALETTE.text, font: { size: 11 } },
+          grid: { color: "transparent" },
+        },
+      },
+    },
+  });
+}
+
+function drawRadar(ctx, d) {
   new Chart(ctx, {
     type: "radar",
     data: {
-      labels: r.categories,
+      labels: d.categories,
       datasets: [
         {
-          label: "With fear in control",
-          data: r.with_fear,
-          borderColor: "#ef4444",
-          backgroundColor: "rgba(239,68,68,0.25)",
-          pointBackgroundColor: "#ef4444",
+          label: "Fear wins",
+          data: d.with_fear,
+          borderColor: PALETTE.dim,
+          backgroundColor: PALETTE.dimFill,
+          pointBackgroundColor: PALETTE.dim,
         },
         {
-          label: "Without it",
-          data: r.without_fear,
-          borderColor: "#4ade80",
-          backgroundColor: "rgba(74,222,128,0.20)",
-          pointBackgroundColor: "#4ade80",
+          label: "You act",
+          data: d.without_fear,
+          borderColor: PALETTE.sky,
+          backgroundColor: PALETTE.skyFill,
+          pointBackgroundColor: PALETTE.sky,
         },
       ],
     },
@@ -247,15 +320,15 @@ function drawRadar(canvasId, r) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { labels: { color: "#e8ecf4", font: { size: 11 } } },
+        legend: { labels: { color: PALETTE.text, font: { size: 11 } } },
       },
       scales: {
         r: {
-          angleLines: { color: "#2a3142" },
-          grid: { color: "#2a3142" },
-          pointLabels: { color: "#cdd4e3", font: { size: 11 } },
+          angleLines: { color: PALETTE.grid },
+          grid: { color: PALETTE.grid },
+          pointLabels: { color: PALETTE.text, font: { size: 11 } },
           ticks: {
-            color: "#8a93a6",
+            color: PALETTE.muted,
             backdropColor: "transparent",
             stepSize: 25,
           },
@@ -267,30 +340,97 @@ function drawRadar(canvasId, r) {
   });
 }
 
-function chartOpts({ yTitle, yMin, yMax }) {
+function drawPolar(ctx, d) {
+  const skyShades = [
+    "rgba(14,165,233,0.75)",
+    "rgba(56,189,248,0.70)",
+    "rgba(125,211,252,0.70)",
+    "rgba(2,132,199,0.70)",
+    "rgba(186,230,253,0.75)",
+  ];
+  new Chart(ctx, {
+    type: "polarArea",
+    data: {
+      labels: d.categories,
+      datasets: [
+        {
+          label: "If you act",
+          data: d.without_fear,
+          backgroundColor: skyShades,
+          borderColor: "#ffffff",
+          borderWidth: 2,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: "right", labels: { color: PALETTE.text, font: { size: 11 }, boxWidth: 12 } },
+      },
+      scales: {
+        r: {
+          angleLines: { color: PALETTE.grid },
+          grid: { color: PALETTE.grid },
+          ticks: { display: false },
+          suggestedMin: 0,
+          suggestedMax: 100,
+        },
+      },
+    },
+  });
+}
+
+function drawDoughnut(ctx, d) {
+  const dimmed = d.with_fear.reduce((a, b) => a + b, 0) / d.with_fear.length;
+  const alive = Math.max(0, 100 - dimmed);
+  new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: ["Dimmed by this fear", "Still yours"],
+      datasets: [
+        {
+          data: [Math.round(dimmed), Math.round(alive)],
+          backgroundColor: [PALETTE.dim, PALETTE.sky],
+          borderColor: "#ffffff",
+          borderWidth: 2,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: "62%",
+      plugins: {
+        legend: { position: "bottom", labels: { color: PALETTE.text, font: { size: 12 }, boxWidth: 12 } },
+        tooltip: {
+          callbacks: {
+            label: (c) => `${c.label}: ${c.parsed}%`,
+          },
+        },
+      },
+    },
+  });
+}
+
+function lineOpts() {
   return {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { labels: { color: "#e8ecf4", font: { size: 11 } } },
+      legend: { labels: { color: PALETTE.text, font: { size: 11 } } },
       tooltip: { mode: "index", intersect: false },
     },
     scales: {
       x: {
-        ticks: { color: "#8a93a6" },
-        grid: { color: "#222838" },
+        ticks: { color: PALETTE.muted },
+        grid: { color: PALETTE.grid },
       },
       y: {
-        min: yMin,
-        max: yMax,
-        ticks: { color: "#8a93a6" },
-        grid: { color: "#222838" },
-        title: {
-          display: !!yTitle,
-          text: yTitle,
-          color: "#8a93a6",
-          font: { size: 11 },
-        },
+        min: 0,
+        max: 100,
+        ticks: { color: PALETTE.muted },
+        grid: { color: PALETTE.grid },
       },
     },
   };
