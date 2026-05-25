@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mindset — Face the Fears Behind Your Goals</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="hero">
+    <h1>Mindset</h1>
+    <p class="tagline">Name your weekly goals. Name the fears trying to stop you. See where they lead — before they get you there.</p>
+  </header>
+
+  <main>
+    <section class="card setup">
+      <h2>1. Your OpenAI API Key</h2>
+      <p class="hint">Stored only in your browser (localStorage). Never sent anywhere except OpenAI.</p>
+      <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off" />
+      <div class="row">
+        <label class="inline">
+          Model:
+          <select id="model">
+            <option value="gpt-4o-mini" selected>gpt-4o-mini (fast, cheap)</option>
+            <option value="gpt-4o">gpt-4o (higher quality)</option>
+            <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+            <option value="gpt-4.1">gpt-4.1</option>
+          </select>
+        </label>
+        <button id="saveKey" class="ghost">Save key</button>
+      </div>
+    </section>
+
+    <section class="card setup">
+      <h2>2. Your Weekly Goals</h2>
+      <p class="hint">One per line. Be specific — e.g. "Reach out to 5 people on LinkedIn", "Ship the landing page", "Run 4 times this week".</p>
+      <textarea id="goals" rows="6" placeholder="• Finish the project proposal&#10;• Talk to 3 potential customers&#10;• Work out 4 times&#10;• Post one piece of public writing"></textarea>
+    </section>
+
+    <section class="card setup">
+      <h2>3. Which Fears Are In The Way?</h2>
+      <p class="hint">Select every fear that you suspect might be sabotaging you.</p>
+      <div class="fears">
+        <label class="fear">
+          <input type="checkbox" value="Fear of rejection" />
+          <div>
+            <strong>Fear of rejection</strong>
+            <span>Makes you avoid people, opportunities, love, networking, and asking for what you want.</span>
+          </div>
+        </label>
+        <label class="fear">
+          <input type="checkbox" value="Fear of failure" />
+          <div>
+            <strong>Fear of failure</strong>
+            <span>Keeps you stuck planning, waiting, and "preparing" instead of actually doing.</span>
+          </div>
+        </label>
+        <label class="fear">
+          <input type="checkbox" value="Fear of judgment" />
+          <div>
+            <strong>Fear of judgment</strong>
+            <span>Makes you live for other people's opinions instead of your own values.</span>
+          </div>
+        </label>
+        <label class="fear">
+          <input type="checkbox" value="Fear of discomfort" />
+          <div>
+            <strong>Fear of discomfort</strong>
+            <span>Makes you choose easy dopamine, laziness, avoidance, and short-term comfort over growth.</span>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <div class="cta-row">
+      <button id="analyze" class="primary">Show me what fear is costing me →</button>
+    </div>
+
+    <div id="status" class="status hidden"></div>
+
+    <section id="results" class="results"></section>
+  </main>
+
+  <footer>
+    <p>Your fears don't disappear when you ignore them. They just get to drive.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
