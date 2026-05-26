@@ -6,6 +6,7 @@
   <title>Mindset — Steer Your Life, Don't Drift</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 </head>
 <body>
   <header class="hero">
@@ -43,11 +44,13 @@
 
     <div class="cta-row">
       <button id="analyze" class="primary">Show me how each fear will try to stop me →</button>
+      <button id="downloadPdf" class="ghost hidden">Download as PDF</button>
     </div>
 
     <div id="status" class="status hidden"></div>
 
-    <section id="results" class="results"></section>
+    <section id="pdfRegion">
+      <section id="results" class="results"></section>
 
     <section id="trackerSection" class="card tracker hidden">
       <h2>3. Tracker — Are you steering or drifting?</h2>
@@ -83,6 +86,7 @@
         <p class="hint">The blue line is your chosen course. The grey line is where the wind drifts you when fear wins. Each action you tick steers you closer to your course.</p>
         <canvas id="steeringCanvas"></canvas>
       </div>
+    </section>
     </section>
   </main>
 

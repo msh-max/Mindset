@@ -34,6 +34,8 @@ const els = {
   totalCount: $("#totalCount"),
   xpCount: $("#xpCount"),
   steeringCanvas: $("#steeringCanvas"),
+  downloadPdf: $("#downloadPdf"),
+  pdfRegion: $("#pdfRegion"),
 };
 
 let goals = [];        // [{ id, trigger, action, goal }]
@@ -131,6 +133,37 @@ els.addGoal.addEventListener("click", () => {
 
 // ---------- run ----------
 els.analyze.addEventListener("click", run);
+els.downloadPdf.addEventListener("click", downloadPdf);
+
+function downloadPdf() {
+  if (typeof html2pdf === "undefined") {
+    setStatus("PDF library failed to load. Check your connection and refresh.", true);
+    return;
+  }
+  const region = els.pdfRegion;
+  if (!region || !region.children.length) {
+    setStatus("Nothing to export yet — run an analysis first.", true);
+    return;
+  }
+  const stamp = new Date().toISOString().slice(0, 10);
+  const opts = {
+    margin: [10, 10, 10, 10],
+    filename: `mindset-${stamp}.pdf`,
+    image: { type: "jpeg", quality: 0.95 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    pagebreak: { mode: ["css", "legacy"], avoid: [".goal-result", ".fear-card", ".tracker-summary", ".steering-wrap"] },
+  };
+  els.downloadPdf.disabled = true;
+  const prevLabel = els.downloadPdf.textContent;
+  els.downloadPdf.textContent = "Generating PDF…";
+  html2pdf().set(opts).from(region).save()
+    .catch((err) => setStatus(`PDF failed: ${err.message}`, true))
+    .finally(() => {
+      els.downloadPdf.disabled = false;
+      els.downloadPdf.textContent = prevLabel;
+    });
+}
 
 function setStatus(msg, isError = false) {
   els.status.classList.remove("hidden", "error");
@@ -170,6 +203,7 @@ async function run() {
     clearStatus();
     renderResults(filled, data);
     buildTracker(filled);
+    els.downloadPdf.classList.remove("hidden");
     els.results.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (err) {
     console.error(err);
