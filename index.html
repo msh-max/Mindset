@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mindset — Face the Fears Behind Your Goals</title>
+  <title>Mindset — Steer Your Life, Don't Drift</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <header class="hero">
     <h1>Mindset</h1>
-    <p class="tagline">Name your weekly goals. Name the fears trying to stop you. See where they lead — before they get you there.</p>
+    <p class="tagline">Set the trigger. Name the move. See how each fear will try to stop you — and steer anyway.</p>
   </header>
 
   <main>
@@ -33,53 +33,57 @@
     </section>
 
     <section class="card setup">
-      <h2>2. Your Weekly Goals</h2>
-      <p class="hint">One per line. Be specific — e.g. "Reach out to 5 people on LinkedIn", "Ship the landing page", "Run 4 times this week".</p>
-      <textarea id="goals" rows="6" placeholder="• Finish the project proposal&#10;• Talk to 3 potential customers&#10;• Work out 4 times&#10;• Post one piece of public writing"></textarea>
-    </section>
-
-    <section class="card setup">
-      <h2>3. Which Fears Are In The Way?</h2>
-      <p class="hint">Select every fear that you suspect might be sabotaging you.</p>
-      <div class="fears">
-        <label class="fear">
-          <input type="checkbox" value="Fear of rejection" />
-          <div>
-            <strong>Fear of rejection</strong>
-            <span>Makes you avoid people, opportunities, love, networking, and asking for what you want.</span>
-          </div>
-        </label>
-        <label class="fear">
-          <input type="checkbox" value="Fear of failure" />
-          <div>
-            <strong>Fear of failure</strong>
-            <span>Keeps you stuck planning, waiting, and "preparing" instead of actually doing.</span>
-          </div>
-        </label>
-        <label class="fear">
-          <input type="checkbox" value="Fear of judgment" />
-          <div>
-            <strong>Fear of judgment</strong>
-            <span>Makes you live for other people's opinions instead of your own values.</span>
-          </div>
-        </label>
-        <label class="fear">
-          <input type="checkbox" value="Fear of discomfort" />
-          <div>
-            <strong>Fear of discomfort</strong>
-            <span>Makes you choose easy dopamine, laziness, avoidance, and short-term comfort over growth.</span>
-          </div>
-        </label>
+      <h2>2. Your Goals — Trigger → Action → Goal</h2>
+      <p class="hint">Fill the blanks. The trigger is what cues you. The action is the move. The goal is what it leads to.</p>
+      <div id="goalsList" class="goals-list"></div>
+      <div class="row">
+        <button id="addGoal" class="ghost">+ Add another goal</button>
       </div>
     </section>
 
     <div class="cta-row">
-      <button id="analyze" class="primary">Show me what fear is costing me →</button>
+      <button id="analyze" class="primary">Show me how each fear will try to stop me →</button>
     </div>
 
     <div id="status" class="status hidden"></div>
 
     <section id="results" class="results"></section>
+
+    <section id="trackerSection" class="card tracker hidden">
+      <h2>3. Tracker — Are you steering or drifting?</h2>
+      <p class="hint">Tick each action when you actually do it. The dashboard updates live.</p>
+
+      <div class="tracker-grid">
+        <div class="tracker-summary">
+          <div class="big-stat">
+            <div class="stat-num" id="overallPct">0%</div>
+            <div class="stat-label">Steered this week</div>
+          </div>
+          <div class="streak-row">
+            <div class="streak">
+              <span class="streak-num" id="doneCount">0</span>
+              <span class="streak-label">Done</span>
+            </div>
+            <div class="streak">
+              <span class="streak-num" id="totalCount">0</span>
+              <span class="streak-label">Total</span>
+            </div>
+            <div class="streak">
+              <span class="streak-num" id="xpCount">0</span>
+              <span class="streak-label">XP</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tracker-checklist" id="trackerChecklist"></div>
+      </div>
+
+      <div class="steering-wrap">
+        <h4>Are you steering, or letting the wind decide?</h4>
+        <p class="hint">The blue line is your chosen course. The grey line is where the wind drifts you when fear wins. Each action you tick steers you closer to your course.</p>
+        <canvas id="steeringCanvas"></canvas>
+      </div>
+    </section>
   </main>
 
   <footer>
